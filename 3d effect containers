@@ -1,0 +1,70 @@
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: Scaffold(
+        appBar: AppBar(
+          title: Text('3D Effect Containers with Swipe'),
+        ),
+        body: StackedContainers(),
+      ),
+    );
+  }
+}
+
+class StackedContainers extends StatefulWidget {
+  @override
+  _StackedContainersState createState() => _StackedContainersState();
+}
+
+class _StackedContainersState extends State<StackedContainers> {
+  int currentIndex = 0;
+
+  void _onSwipe() {
+    setState(() {
+      currentIndex = (currentIndex + 1) % 6; // Loop through the containers
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Stack(
+        alignment: Alignment.center,
+        children: List.generate(6, (index) {
+          int displayIndex = (currentIndex + index) % 6;
+          double scale = 1 - (index * 0.05);
+          return GestureDetector(
+            onTap: _onSwipe,
+            child: AnimatedPositioned(
+              duration: Duration(milliseconds: 300),
+              left: index % 2 == 0 ? 20.0 * index : null,
+              right: index % 2 != 0 ? 20.0 * index : null,
+              top: 20.0 * index,
+              child: Transform.scale(
+                scale: scale,
+                child: Container(
+                  height: 200,
+                  width: 300,
+                  color: Colors.primaries[displayIndex % Colors.primaries.length],
+                  child: Center(
+                    child: Text(
+                      'Container $displayIndex',
+                      style: TextStyle(color: Colors.white, fontSize: 20),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }),
+      ),
+    );
+  }
+}

@@ -1,0 +1,215 @@
+import 'dart:async';
+import 'package:flutter/material.dart';
+import 'package:speech_to_text/speech_recognition_error.dart';
+import 'package:speech_to_text/speech_recognition_result.dart';
+import 'package:speech_to_text/speech_to_text.dart';
+import 'package:flutter_tts/flutter_tts.dart';
+
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatefulWidget {
+  const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: VoiceForm(),
+    );
+  }
+}
+
+class VoiceForm extends StatefulWidget {
+  const VoiceForm({Key? key}) : super(key: key);
+
+  @override
+  State<VoiceForm> createState() => _VoiceFormState();
+}
+
+class _VoiceFormState extends State<VoiceForm> {
+  final SpeechToText _speechToText = SpeechToText();
+  final FlutterTts _flutterTts = FlutterTts();
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _addressController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
+
+  bool _speechEnabled = false;
+  bool _speechAvailable = false;
+  String _currentWords = '';
+  int _currentQuestionIndex = 0;
+  Timer? _timer;
+
+  final List<Map<String, dynamic>> _questions = [
+    {'field': 'name', 'prompt': 'Please tell me your name'},
+    {'field': 'address', 'prompt': 'Please tell me your address'},
+    {'field': 'email', 'prompt': 'Please tell me your email address'},
+    {'field': 'phone', 'prompt': 'Please tell me your phone number'},
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _initSpeech();
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _addressController.dispose();
+    _emailController.dispose();
+    _phoneController.dispose();
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  void errorListener(SpeechRecognitionError error) {
+    debugPrint(error.errorMsg.toString());
+  }
+
+  void statusListener(String status) async {
+    debugPrint("status $status");
+    if (status == "done" && _speechEnabled) {
+      setState(() {
+        _speechEnabled = false;
+      });
+      await _processInput();
+    }
+  }
+
+  void _initSpeech() async {
+    _speechAvailable = await _speechToText.initialize(
+        onError: errorListener, onStatus: statusListener);
+    setState(() {});
+  }
+
+  Future _startListening() async {
+    await _stopListening();
+    await Future.delayed(const Duration(milliseconds: 50));
+    await _speechToText.listen(
+      onResult: _onSpeechResult,
+      listenOptions: SpeechListenOptions(
+          listenMode: ListenMode.dictation,
+          cancelOnError: true,
+          partialResults: false),
+    );
+    setState(() {
+      _speechEnabled = true;
+    });
+  }
+
+  Future _stopListening() async {
+    setState(() {
+      _speechEnabled = false;
+    });
+    await _speechToText.stop();
+  }
+
+  void _onSpeechResult(SpeechRecognitionResult result) {
+    setState(() {
+      _currentWords = result.recognizedWords;
+    });
+  }
+
+  void _askForInput() async {
+    if (_currentQuestionIndex < _questions.length) {
+      String prompt = _questions[_currentQuestionIndex]['prompt'];
+      await _flutterTts.speak(prompt);
+      await Future.delayed(Duration(seconds: 2));
+      _startListening();
+      _timer = Timer(Duration(seconds: 10), () async {
+        if (_currentWords.isEmpty) {
+          await _flutterTts.speak('I did not hear anything. Please try again.');
+          _currentWords = ''; // Clear current words
+          _startListening(); // Restart listening
+        } else {
+          await _processInput();
+        }
+      });
+    }
+  }
+
+  Future<void> _processInput() async {
+    _timer?.cancel();
+    if (_currentWords.isNotEmpty && _currentQuestionIndex < _questions.length) {
+      switch (_questions[_currentQuestionIndex]['field']) {
+        case 'name':
+          _nameController.text = _currentWords;
+          break;
+        case 'address':
+          _addressController.text = _currentWords;
+          break;
+        case 'email':
+          _emailController.text = _currentWords;
+          break;
+        case 'phone':
+          _phoneController.text = _currentWords;
+          break;
+      }
+
+      _currentQuestionIndex++;
+      _currentWords = ''; // Clear current words after processing
+      if (_currentQuestionIndex < _questions.length) {
+        _askForInput();
+      } else {
+        await _flutterTts.speak('Form completed. You can now submit the form.');
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Voice Form'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          child: Column(
+            children: [
+              TextFormField(
+                controller: _nameController,
+                decoration: InputDecoration(labelText: 'Name'),
+              ),
+              TextFormField(
+                controller: _addressController,
+                decoration: InputDecoration(labelText: 'Address'),
+              ),
+              TextFormField(
+                controller: _emailController,
+                decoration: InputDecoration(labelText: 'Email'),
+              ),
+              TextFormField(
+                controller: _phoneController,
+                decoration: InputDecoration(labelText: 'Phone'),
+              ),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  if (!_speechEnabled) {
+                    _currentQuestionIndex = 0;
+                    _askForInput();
+                  }
+                },
+                child: Text('Start Voice Input'),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  // Submit form logic
+                },
+                child: Text('Submit'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

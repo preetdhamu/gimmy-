@@ -1,0 +1,198 @@
+it workes perfectly "import 'dart:io';
+
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:porcupine_flutter/porcupine_manager.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'package:flutter_tts/flutter_tts.dart';
+
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: VoiceForm(),
+    );
+  }
+}
+
+class VoiceForm extends StatefulWidget {
+  @override
+  _VoiceFormState createState() => _VoiceFormState();
+}
+
+class _VoiceFormState extends State<VoiceForm> {
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _addressController = TextEditingController();
+  final _phoneController = TextEditingController();
+  stt.SpeechToText? _speech;
+  FlutterTts? _flutterTts;
+  PorcupineManager? _porcupineManager;
+  bool _isListening = false;
+  bool _isProcessing = false;
+  int _currentQuestionIndex = 0;
+  String name = '';
+  final List<Map<String, dynamic>> _questions = [
+    {'field': 'name', 'prompt': 'Please tell me your name'},
+    {'field': 'address', 'prompt': 'Hello , Please tell me your address'},
+    {'field': 'phone number', 'prompt': 'Please tell me your Phone number'},
+  ];
+  @override
+  void initState() {
+    super.initState();
+    _speech = stt.SpeechToText();
+    _flutterTts = FlutterTts();
+    initializePorcupine((keywordIndex) {
+      if (keywordIndex == 0) {
+        _onWakeWordDetected();
+      }
+    });
+  }
+
+  void _onWakeWordDetected() async {
+    if (_isListening) return;
+    await _porcupineManager!.stop();
+    //start listening ;
+    Future.delayed(Duration(seconds: 2), () {
+      if (!_isProcessing) {
+        _currentQuestionIndex = 0;
+        _askForInput();
+      }
+    });
+  }
+
+  void initializePorcupine(Function(int) wakeword) async {
+    final ByteData data = await rootBundle.load('assets/gimmy.ppn');
+    final Directory tempDir = await getTemporaryDirectory();
+    final File tempFile = File('${tempDir.path}/gimmy.ppn');
+    await tempFile.writeAsBytes(data.buffer.asUint8List(), flush: true);
+    _porcupineManager = await PorcupineManager.fromKeywordPaths(
+      '1pSPSs01odW7pIvWLas3I/hgxbACl24c/oryKT3wI9O9UzFRDbZw6w==',
+      [tempFile.path],
+      wakeword,
+    );
+    _porcupineManager!.start();
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _addressController.dispose();
+    _phoneController.dispose();
+    _porcupineManager?.stop();
+    super.dispose();
+  }
+
+  void _startListening() async {
+    if (!_isListening) {
+      bool available = await _speech!.initialize();
+      if (available) {
+        setState(() {
+          _isListening = true;
+          _isProcessing = true;
+        });
+        _speech!.listen(
+            listenOptions: stt.SpeechListenOptions(listenMode: stt.ListenMode.dictation, cancelOnError: true, partialResults: true),
+            listenFor: const Duration(seconds: 60),
+            pauseFor: const Duration(seconds: 10),
+            onResult: (result) {
+              if (result.finalResult) {
+                setState(() {
+                  // _isListening = false;
+                  // _isProcessing = false;
+                  _stopListening();
+                });
+                _fillField(result.recognizedWords);
+              }
+            });
+      }
+    }
+  }
+
+  void _stopListening() {
+    _speech!.stop();
+    setState(() {
+      _isListening = false;
+      _isProcessing = false;
+    });
+  }
+
+  void _fillField(String recognizedWords) {
+    recognizedWords.replaceAll(_questions[_currentQuestionIndex]['prompt'], '');
+    switch (_questions[_currentQuestionIndex]['field']) {
+      case 'name':
+        _nameController.text = recognizedWords;
+        break;
+      case 'address':
+        _addressController.text = recognizedWords;
+        break;
+      case 'phone number':
+        _phoneController.text = recognizedWords;
+        break;
+    }
+    _currentQuestionIndex++;
+    if (_currentQuestionIndex < _questions.length) {
+      Future.delayed(Duration(seconds: 2), () {
+        _askForInput();
+      });
+    } else {
+      _flutterTts!.speak('Form completed. You can now submit the form.');
+    }
+  }
+
+  void _askForInput() async {
+    if (_currentQuestionIndex < _questions.length) {
+      String prompt = _questions[_currentQuestionIndex]['prompt'];
+      await _flutterTts!.speak(prompt).whenComplete(() {
+        _startListening();
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Voice Form'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              TextFormField(
+                controller: _nameController,
+                decoration: InputDecoration(labelText: 'Name'),
+              ),
+              TextFormField(
+                controller: _addressController,
+                decoration: InputDecoration(labelText: 'Address'),
+              ),
+              TextFormField(
+                controller: _phoneController,
+                decoration: InputDecoration(labelText: 'Phone Number'),
+              ),
+              SizedBox(height: 20),
+              Icon(_isListening ? Icons.mic : Icons.mic_off),
+              _isProcessing ? const CircularProgressIndicator() : const SizedBox(),
+              ElevatedButton(
+                onPressed: () {
+                  if (_formKey.currentState!.validate()) {
+                    _flutterTts!.speak('Form submitted successfully');
+                  }
+                },
+                child: Text('Submit'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}"

@@ -1,0 +1,193 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+
+void main() {
+  runApp(
+    ChangeNotifierProvider(
+      create: (context) => RoomState(),
+      child: MyApp(),
+    ),
+  );
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Vertical Toggle Buttons',
+      home: MainScreen(),
+    );
+  }
+}
+
+class RoomState with ChangeNotifier {
+  final List<String> rooms = [
+    'Bedroom',
+    'Bathroom',
+    'Living Room',
+    'Guest Room',
+    'Kitchen'
+  ];
+  List<bool> toggleStates = [false, false, false, false, false];
+  int currentIndex = 0;
+
+  void toggle(int index) {
+    for (int i = 0; i < toggleStates.length; i++) {
+      toggleStates[i] = i == index ? !toggleStates[i] : false;
+    }
+    currentIndex = index;
+    notifyListeners();
+  }
+
+  void setCurrentIndex(int index) {
+    currentIndex = index;
+    notifyListeners();
+  }
+
+  void closeAllToggles() {
+    for (int i = 0; i < toggleStates.length; i++) {
+      toggleStates[i] = false;
+    }
+    notifyListeners();
+  }
+}
+
+class MainScreen extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final roomState = Provider.of<RoomState>(context);
+
+    return Scaffold(
+      appBar: AppBar(title: Text('Vertical Toggle Buttons')),
+      body: ListView.builder(
+        itemCount: roomState.rooms.length,
+        itemBuilder: (context, index) {
+          return ToggleButton(
+            roomName: roomState.rooms[index],
+            isActive: roomState.toggleStates[index],
+            onToggle: () {
+              roomState.toggle(index);
+              // Introduce a delay before navigating to the second screen
+              Future.delayed(Duration(milliseconds: 500), () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => RoomPagesWindow(),
+                  ),
+                ).then((_) {
+                  roomState
+                      .closeAllToggles(); // Close all toggles when returning to the main screen
+                });
+              });
+            },
+          );
+        },
+      ),
+    );
+  }
+}
+
+class ToggleButton extends StatelessWidget {
+  final String roomName;
+  final bool isActive;
+  final VoidCallback onToggle;
+
+  ToggleButton(
+      {required this.roomName, required this.isActive, required this.onToggle});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onToggle,
+      child: Container(
+        margin: EdgeInsets.all(8),
+        padding: EdgeInsets.all(16),
+        height: 80, // Adjust height as needed
+        decoration: BoxDecoration(
+          color: isActive ? Colors.green : Colors.grey[300],
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black12,
+              offset: Offset(3, 3),
+              blurRadius: 5,
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              isActive ? Icons.check_circle : Icons.circle,
+              color: isActive ? Colors.white : Colors.black,
+            ),
+            SizedBox(height: 8),
+            Text(
+              roomName,
+              style: TextStyle(
+                color: isActive ? Colors.white : Colors.black,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class RoomPagesWindow extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final roomState = Provider.of<RoomState>(context);
+
+    return Scaffold(
+      appBar: AppBar(title: Text('Room Pages')),
+      body: DefaultTabController(
+        length: roomState.rooms.length,
+        initialIndex: roomState.currentIndex,
+        child: Column(
+          children: [
+            TabBar(
+              isScrollable: true,
+              tabs: roomState.rooms.map((room) => Tab(text: room)).toList(),
+              onTap: (index) {
+                roomState.setCurrentIndex(index);
+              },
+            ),
+            Expanded(
+              child: Column(
+                children: [
+                  Container(
+                    height: 200,
+                    child: ListView.builder(
+                      scrollDirection: Axis.vertical,
+                      itemCount: roomState.rooms.length,
+                      itemBuilder: (context, index) {
+                        return ToggleButton(
+                          roomName: roomState.rooms[index],
+                          isActive: roomState.toggleStates[index],
+                          onToggle: () {
+                            roomState.toggle(index);
+                            DefaultTabController.of(context)?.animateTo(index);
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                  Expanded(
+                    child: TabBarView(
+                      children: roomState.rooms.map((room) {
+                        return Center(child: Text('Welcome to $room'));
+                      }).toList(),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

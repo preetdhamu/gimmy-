@@ -1,0 +1,149 @@
+import 'package:flutter/material.dart';
+
+void main() => runApp(MyApp());
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: HomePage(),
+    );
+  }
+}
+
+class HomePage extends StatefulWidget {
+  @override
+  _HomePageState createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  int _selectedIndex = 0;
+  bool _isEditing = false;
+
+  List<Map<String, dynamic>> data = [
+    {"name": "John", "age": 25},
+    {"name": "Preet", "age": 5},
+    {"name": "Robin", "age": 15},
+    {"name": "Alex", "age": 35} // Added an extra item for Kitchen
+  ];
+
+  List<String> _choices = ['Bedroom', 'Living Room', 'Guest Room', 'Kitchen'];
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
+  void _onReorder(int oldIndex, int newIndex) {
+    setState(() {
+      if (newIndex > oldIndex) {
+        newIndex -= 1;
+      }
+      final String item = _choices.removeAt(oldIndex);
+      _choices.insert(newIndex, item);
+      final Map<String, dynamic> dataItem = data.removeAt(oldIndex);
+      data.insert(newIndex, dataItem);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Home Sections'),
+        actions: [
+          IconButton(
+            icon: Icon(_isEditing ? Icons.check : Icons.edit),
+            onPressed: () {
+              setState(() {
+                _isEditing = !_isEditing;
+              });
+            },
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          // Choices List
+          Container(
+            height: 50.0,
+            child: _isEditing
+                ? ReorderableListView(
+                    scrollDirection: Axis.horizontal,
+                    onReorder: _onReorder,
+                    children: List.generate(_choices.length, (index) {
+                      return GestureDetector(
+                        key: ValueKey(_choices[index]),
+                        child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 16.0),
+                          alignment: Alignment.center,
+                          color: _selectedIndex == index
+                              ? Colors.blue
+                              : Colors.grey,
+                          child: Text(
+                            _choices[index],
+                            style: TextStyle(
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      );
+                    }),
+                  )
+                : ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: _choices.length,
+                    itemBuilder: (context, index) {
+                      return GestureDetector(
+                        onTap: () => _onItemTapped(index),
+                        child: Container(
+                          padding: EdgeInsets.symmetric(horizontal: 16.0),
+                          alignment: Alignment.center,
+                          color: _selectedIndex == index
+                              ? Colors.blue
+                              : Colors.grey,
+                          child: Text(
+                            _choices[index],
+                            style: TextStyle(
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+          // Content Display
+          Expanded(
+            child: IndexedStack(
+              index: _selectedIndex,
+              children: data.map((contentData) {
+                return Content(contentData);
+              }).toList(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class Content extends StatelessWidget {
+  final Map<String, dynamic> contentData;
+
+  Content(this.contentData);
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text('Name: ${contentData["name"]}'),
+          Text('Age: ${contentData["age"]}'),
+        ],
+      ),
+    );
+  }
+}

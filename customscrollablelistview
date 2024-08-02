@@ -1,0 +1,72 @@
+import 'package:flutter/material.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
+
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: ScrollToIndexExample(),
+    );
+  }
+}
+
+class ScrollToIndexExample extends StatefulWidget {
+  @override
+  _ScrollToIndexExampleState createState() => _ScrollToIndexExampleState();
+}
+
+class _ScrollToIndexExampleState extends State<ScrollToIndexExample> {
+  final ItemScrollController itemScrollController = ItemScrollController();
+  final ItemPositionsListener itemPositionsListener =
+      ItemPositionsListener.create();
+  final List<String> items = List.generate(20, (index) => 'Item $index');
+
+  void scrollToIndex(int index) {
+    itemScrollController.scrollTo(
+      index: index,
+      duration: Duration(seconds: 1),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Scroll to Index Example')),
+      body: Column(
+        children: [
+          Container(
+            height: 50.0,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              itemCount: items.length,
+              itemBuilder: (context, index) {
+                return ElevatedButton(
+                  onPressed: () => scrollToIndex(index),
+                  child: Text('Index $index'),
+                );
+              },
+            ),
+          ),
+          Expanded(
+            child: ScrollablePositionedList.builder(
+              itemScrollController: itemScrollController,
+              itemPositionsListener: itemPositionsListener,
+              itemCount: items.length,
+              itemBuilder: (context, index) {
+                return Container(
+                  height: index * 100,
+                  child: Text(items[index]),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

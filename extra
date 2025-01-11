@@ -1,40 +1,50 @@
-import Flutter
-import UIKit
-import flutter_local_notifications
+Welcome to Car Wash and Shine, your ultimate solution for convenient car servicing and premium care. Designed for ease and efficiency, our app allows you to book car services, subscribe to exclusive packages, and manage payments effortlessly. Experience a streamlined process that takes the hassle out of car maintenance while ensuring top-quality service.
 
-@main
-@objc class AppDelegate: FlutterAppDelegate {
-    override func application(
-        _ application: UIApplication,
-        didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
-    ) -> Bool {
-        FlutterLocalNotificationsPlugin.setPluginRegistrantCallback { (registry) in
-            GeneratedPluginRegistrant.register(with: registry)
-        }
-        GeneratedPluginRegistrant.register(with: self)
-        if #available(iOS 10.0, *) {
-            UNUserNotificationCenter.current().delegate = self
-        }
-        return super.application(application, didFinishLaunchingWithOptions: launchOptions)
-    }
+Key Features of Car Wash and Shine
 
-    override func applicationWillResignActive(_ application: UIApplication) {
-        // Add a blur effect to obscure sensitive information while app is in the background
-        if let window = UIApplication.shared.windows.first {
-            let blurEffect = UIBlurEffect(style: .light)
-            let blurEffectView = UIVisualEffectView(effect: blurEffect)
-            blurEffectView.frame = window.bounds
-            blurEffectView.tag = 999  // Tag to identify the blur view
-            window.addSubview(blurEffectView)
-        }
-    }
+🚗 Book Car Services with Ease
+With just a few taps, schedule your car wash or servicing at your preferred time. Choose from a range of packages tailored to your vehicle's needs and ensure your car gets the best care possible.
 
-    override func applicationDidBecomeActive(_ application: UIApplication) {
-        // Remove the blur effect when the app becomes active
-        if let window = UIApplication.shared.windows.first {
-            if let blurEffectView = window.viewWithTag(999) {
-                blurEffectView.removeFromSuperview()
-            }
-        }
-    }
-}
+📦 Subscribe to Exclusive Packages
+Enjoy the flexibility of subscription packages for regular car care. Choose a package that suits your budget and needs to keep your vehicle in top condition all year round.
+
+📱 QR Code-Based Check-In
+Say goodbye to manual entries! When you arrive at the service location, a QR code is generated for your vehicle. Simply scan the QR code to verify your service or package and proceed into the premises hassle-free.
+
+💳 Secure Payment Options
+Make secure payments directly through the app using trusted payment gateways powered by Stripe. Whether it’s a one-time booking or a subscription, our app ensures a seamless payment experience.
+
+🔧 Premium Showroom-Only Service
+Our app focuses on delivering quality service at dedicated showrooms. Book your service, visit the showroom, and let our experts take care of your car.
+
+🎁 Personalized Recommendations
+Based on your preferences and vehicle details, we provide customized service recommendations and package options, ensuring you get exactly what your car needs.
+
+🔒 Secure and Transparent
+Your data security is our priority. All transactions and information are protected with advanced encryption technology, ensuring a safe and reliable experience every time you use our app.
+
+How It Works:
+1️⃣ Book your car service or subscribe to a package through the app.
+2️⃣ Visit the showroom with your vehicle at the scheduled time.
+3️⃣ A QR code will be generated in the app for your vehicle.
+4️⃣ Scan the QR code at the premises to verify your booking or subscription.
+5️⃣ Enjoy professional service from our expert team.
+
+Why Choose Car Wash and Shine?
+
+Convenience: Effortlessly book and manage your car services on the go.
+Transparency: Clear details about services, packages, and pricing with no hidden costs.
+Premium Service: High-quality car care from experts at our showrooms.
+Secure Payments: Trustworthy payment options powered by Stripe for seamless transactions.
+Who Can Use This App?
+Car Wash and Shine is perfect for car owners who value quality service and a hassle-free booking process. Whether you’re a busy professional or a car enthusiast, our app simplifies car maintenance while ensuring your vehicle gets premium care.
+
+About Us:
+Car Wash and Shine is dedicated to redefining car servicing with a modern, tech-driven approach. Our mission is to deliver convenience and quality while prioritizing customer satisfaction.
+
+Download Car Wash and Shine today and give your car the care it deserves. Simplify your car maintenance journey with our easy-to-use app and enjoy a seamless experience from booking to service!
+
+If you have any questions or need assistance, contact us at:
+📧 Email: gurpreetdhamu8586@gmail.com
+📞 Phone: +919784893883
+🏢 Address: SCO 132, opp.starbucks Market, Ranjit Avenue, Amritsar 143001 .
